@@ -1,10 +1,13 @@
 <?php
 return[
-    'ftp_server' => "host",
+    "ftp_server" => "host",
 
-    'ftp_user' => "user",
+    "ftp_user" => "user",
 
-    'ftp_pass' => "password",
+    "ftp_pass" => "password",
 
-    'token' => "token"
+    "ftp_domain"=>"domain",
+
+    "token" => "token"
 ];
+

@@ -1,19 +1,25 @@
 <?php
-include "Classes/ftpService.php";
-include "Classes/fileController.php";
 
+class Autoloader
+{
+    public static function register()
+    {
+        spl_autoload_register(function ($class) {
+            $file = "Classes/" . str_replace('\\', DIRECTORY_SEPARATOR, $class) . '.php';
+            if (file_exists($file)) {
+                require $file;
+                return true;
+            }
+            return false;
+        });
+    }
+}
 
-$settings = include "config.php";
+Autoloader::register();
 
-$conn_id = ftpService::FTPConnect($settings);
-
-$file = new fileController($conn_id);
-
-$file->upload();
-
-ftpService::FTPClose($conn_id);
-
-
-
-
+$settings = include "configExample.php";
+$conn_id = FtpService::ftpConnect($settings);
+$file = new FileController($conn_id);
+$file->upload($settings["ftp_domain"]);
+FtpService::ftpClose($conn_id);
 
