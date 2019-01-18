@@ -6,7 +6,7 @@ return[
 
     "ftp_pass" => "password",
 
-    "ftp_domain" => "domain",
+    "ftp_domain" => "domain", // http://domain.com/
 
     "tokens" => [
         "username1" => "token",

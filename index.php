@@ -17,7 +17,7 @@ class Autoloader
 
 Autoloader::register();
 
-$settings = include "configExample.php";
+$settings = include "config.php";
 $conn_id = FtpService::ftpConnect($settings);
 $file = new FileController($conn_id);
 $file->upload($settings["ftp_domain"]);
