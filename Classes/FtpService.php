@@ -3,7 +3,10 @@ class ftpService
 {
     static function ftpConnect($settings)
     {
-        if ($settings['token'] != $_POST['token']) {
+        $tokenArray = $settings['tokens'];
+        if (in_array([$_POST['username'] => $_POST['token']],$tokenArray)) {
+            die("Верный токен");
+        } else {
             die("Неверный токен");
         }
 

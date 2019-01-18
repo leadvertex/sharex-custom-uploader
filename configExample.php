@@ -6,8 +6,11 @@ return[
 
     "ftp_pass" => "password",
 
-    "ftp_domain"=>"domain",
+    "ftp_domain" => "domain",
 
-    "token" => "token"
+    "tokens" => [
+        "username1" => "token",
+        "username2" => "token"
+    ]
 ];
 
