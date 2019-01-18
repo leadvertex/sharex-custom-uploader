@@ -4,10 +4,8 @@ class ftpService
     static function ftpConnect($settings)
     {
         $tokenArray = $settings['tokens'];
-        if (in_array([$_POST['username'] => $_POST['token']],$tokenArray)) {
-            die("Верный токен");
-        } else {
-            die("Неверный токен");
+        if ($tokenArray[$_POST['username']] != $_POST['token']) {
+            die("Неверный токен или пользователь");
         }
 
         $user = $settings['ftp_user'];
