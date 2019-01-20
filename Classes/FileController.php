@@ -1,16 +1,16 @@
 <?php
 
-Class fileController
+Class FileController
 {
-    private $conn_id;
+    private $connId;
     private $fType;
-    private $target_parts;
+    private $targetParts;
     private $localFile;
     private $tmpPath;
 
-    function __construct($conn_id)
+    function __construct($connId)
     {
-        $this->conn_id = $conn_id;
+        $this->connId = $connId;
     }
 
     public function isImage($fType)
@@ -24,25 +24,28 @@ Class fileController
 
     private function checkFtpDir()
     {
-        if (ftp_pwd($this->conn_id) == '/') {
-            if (!ftp_chdir($this->conn_id, 'scr/')) {
-                ftp_mkdir($this->conn_id, 'scr/' . date("Ym"));
+        if (ftp_pwd($this->connId) == '/') {
+            if (!ftp_chdir($this->connId, 'scr/')) {
+                ftp_mkdir($this->connId, 'scr/' . date("Ym"));
             }
         }
     }
 
     public function upload($domain)
     {
-        if ($arr = $this->tmpLocalSave()) {
+        if ($this->tmpLocalSave()) {
             if (ftp_fput(
-                $this->conn_id,
-                date("Ym") . '/' . end($this->target_parts),
+                $this->connId,
+                date("Ym") . '/' . end($this->targetParts),
                 $this->localFile,
                 $this->isImage($this->fType)
             )) {
                 fclose($this->localFile);
                 unlink($this->tmpPath);
-                echo 'http://' . $domain . '/' . date("Ym") . '/' . end($this->target_parts);
+                print('http://' .
+                    $domain . '/' .
+                    date("Ym") . '/' .
+                    end($this->targetParts));
             } else {
                 print("Ошибка при загрузке файла на сервер");
             }
@@ -55,11 +58,13 @@ Class fileController
         $target = bin2hex(random_bytes(6)) . "." . end($nameParts);
 
         if (move_uploaded_file($_FILES['ShareX']['tmp_name'],$target)) {
-            $this->target_parts = explode('/' . date("Ym"), $target);
-            $this->tmpPath = dirname(__DIR__).'/' . end($this->target_parts);
+            $this->targetParts = explode('/' .
+                date("Ym"), $target);
+            $this->tmpPath = dirname(__DIR__) .
+                '/' . end($this->targetParts);
             $this->fType = $nameParts;
-            $this->localFile = fopen($this->tmpPath,'r');
-            $this->fType = explode('/',$_FILES['ShareX']['type'])[0];
+            $this->localFile = fopen($this->tmpPath, 'r');
+            $this->fType = explode('/', $_FILES['ShareX']['type'])[0];
             $this->checkFtpDir();
             return true;
         } else {
