@@ -19,7 +19,7 @@ class Autoloader
 
 Autoloader::register();
 
-$settings = include "config.example.php";
+$settings = include "config.php";
 
 try {
     error_reporting(E_ALL ^ E_WARNING);
