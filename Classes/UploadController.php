@@ -1,6 +1,5 @@
 <?php
-
-Class UploadController
+class UploadController
 {
     private $connId;
     private $fType;
@@ -11,14 +10,18 @@ Class UploadController
     private $user;
     private $pass;
     private $server;
+    private $port;
+    private $timeout;
 
-    function __construct( $settings)
+    function __construct($settings)
     {
         $this->domain = $settings['ftpDomain'];
         $this->tokens = $settings['tokens'];
         $this->user = $settings['ftpUser'];
         $this->pass = $settings['ftpPass'];
         $this->server = $settings['ftpServer'];
+        $this->timeout = $settings['ftpTimeout'];
+        $this->port = $this->checkPort($settings['ftpPort']);
     }
 
     private function isImage($fType)
@@ -86,16 +89,29 @@ Class UploadController
     private function ftpConnect($login)
     {
         if ($this->tokens[$login['username']] != $login['token']) {
-            die("Неверный токен или пользователь");
+            throw new ConnectException(
+                "Неверный токен или пользователь",
+                0
+            );
         }
 
-        $connId = ftp_ssl_connect($this->server) or
-        die('Не удалось установить соединение с ' . $this->server);
+        $connId = ftp_ssl_connect($this->server,$this->port,$this->timeout);
+        if ($connId == false) {
+            throw new ConnectException(
+                'Не удалось установить соединение с ' .
+                $this->server,
+                1
+            );
+        }
 
         if (!ftp_login($connId, $this->user, $this->pass)) {
-            die('Не удалось установить соединение под логином ' . $this->user);
+            throw new ConnectException(
+                'Неверное имя пользователя ftp: ' .
+                $this->user,
+                2
+            );
         } else {
-            ftp_pasv ($connId,true);
+            ftp_pasv($connId,true);
         }
         $this->connId = $connId;
     }
@@ -103,6 +119,15 @@ Class UploadController
     private function ftpClose()
     {
         ftp_close($this->connId);
+    }
+
+    private function checkPort($port)
+    {
+        if(!empty($port)){
+            return $port;
+        } else {
+            return 21;
+        }
     }
 }
 

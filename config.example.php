@@ -2,6 +2,10 @@
 return[
     "ftpServer" => "host",
 
+    "ftpPort" => "21",
+
+    "ftpTimeout" => "5",
+
     "ftpUser" => "user",
 
     "ftpPass" => "password",
