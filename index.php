@@ -20,8 +20,7 @@ class Autoloader
 Autoloader::register();
 
 $settings = include "config.php";
-$connId = FtpService::ftpConnect($settings);
-$file = new FileController($connId);
-$file->upload($settings["ftpDomain"]);
-FtpService::ftpClose($connId);
+
+$uploadController = new UploadController($_FILES['ShareX'], $_POST, $settings);
+$uploadController->upload();
 
