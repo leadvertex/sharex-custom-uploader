@@ -7,17 +7,13 @@ Class UploadController
     private $targetParts;
     private $localFile;
     private $tmpPath;
-    private $files;
-    private $login;
     private $domain;
     private $user;
     private $pass;
     private $server;
 
-    function __construct($files, $login, $settings)
+    function __construct( $settings)
     {
-        $this->files = $files;
-        $this->login = $login;
         $this->domain = $settings['ftpDomain'];
         $this->tokens = $settings['tokens'];
         $this->user = $settings['ftpUser'];
@@ -43,10 +39,10 @@ Class UploadController
         }
     }
 
-    public function upload()
+    public function upload($files,$login)
     {
-        $this->ftpConnect();
-        if ($this->tmpLocalSave()) {
+        $this->ftpConnect($login);
+        if ($this->tmpLocalSave($files)) {
             if (ftp_fput(
                 $this->connId,
                 date("Ym") . '/' . end($this->targetParts),
@@ -66,19 +62,19 @@ Class UploadController
         }
     }
 
-    private function tmpLocalSave()
+    private function tmpLocalSave($files)
     {
-        $nameParts = explode(".", $this->files["name"]);
+        $nameParts = explode(".", $files["name"]);
         $target = bin2hex(random_bytes(6)) . "." . end($nameParts);
 
-        if (move_uploaded_file($this->files['tmp_name'],$target)) {
+        if (move_uploaded_file($files['tmp_name'],$target)) {
             $this->targetParts = explode('/' .
                 date("Ym"), $target);
             $this->tmpPath = dirname(__DIR__) .
                 '/' . end($this->targetParts);
             $this->fType = $nameParts;
             $this->localFile = fopen($this->tmpPath, 'r');
-            $this->fType = explode('/', $this->files['type'])[0];
+            $this->fType = explode('/', $files['type'])[0];
             $this->checkFtpDir();
             return true;
         } else {
@@ -87,9 +83,9 @@ Class UploadController
         }
     }
 
-    private function ftpConnect()
+    private function ftpConnect($login)
     {
-        if ($this->tokens[$this->login['username']] != $this->login['token']) {
+        if ($this->tokens[$login['username']] != $login['token']) {
             die("Неверный токен или пользователь");
         }
 

@@ -21,6 +21,6 @@ Autoloader::register();
 
 $settings = include "config.php";
 
-$uploadController = new UploadController($_FILES['ShareX'], $_POST, $settings);
-$uploadController->upload();
+$uploadController = new UploadController($settings);
+$uploadController->upload($_FILES['ShareX'], $_POST);
 
