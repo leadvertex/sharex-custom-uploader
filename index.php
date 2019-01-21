@@ -21,10 +21,14 @@ Autoloader::register();
 
 $settings = include "config.php";
 
-try {
-    error_reporting(E_ALL ^ E_WARNING);
-    $uploadController = new UploadController($settings);
-    $uploadController->upload($_FILES['ShareX'], $_POST);
-} catch (Exception $e){
-    print($e);
+if(!empty($_POST)) {
+    try {
+        error_reporting(E_ALL ^ E_WARNING);
+        $uploadController = new UploadController($settings);
+        $uploadController->upload($_FILES['ShareX'], $_POST);
+    } catch (Exception $e) {
+        print($e);
+    }
+} else {
+    echo "POST пуст!";
 }

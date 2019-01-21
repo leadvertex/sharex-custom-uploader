@@ -38,6 +38,8 @@ class UploadController
         if (ftp_pwd($this->connId) == '/') {
             if (!ftp_chdir($this->connId, 'scr/')) {
                 ftp_mkdir($this->connId, 'scr/' . date("Ym"));
+            } else {
+                ftp_mkdir($this->connId, date("Ym") . '/');
             }
         }
     }
@@ -56,11 +58,12 @@ class UploadController
                 unlink($this->tmpPath);
                 $this->ftpClose();
                 print('http://' .
-                    $this->domain . '/' .
+                    $this->domain . '/scr/' .
                     date("Ym") . '/' .
                     end($this->targetParts));
             } else {
                 print("Ошибка при загрузке файла на сервер");
+                unlink($this->tmpPath);
             }
         }
     }
@@ -68,7 +71,7 @@ class UploadController
     private function tmpLocalSave($files)
     {
         $nameParts = explode(".", $files["name"]);
-        $target = bin2hex(random_bytes(6)) . "." . end($nameParts);
+        $target = substr(hash("ripemd160",$files["name"]),0,10) . "." . end($nameParts);
 
         if (move_uploaded_file($files['tmp_name'],$target)) {
             $this->targetParts = explode('/' .
