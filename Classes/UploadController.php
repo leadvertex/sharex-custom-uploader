@@ -13,7 +13,7 @@ class UploadController
     private $port;
     private $timeout;
 
-    function __construct($settings)
+    public function __construct($settings)
     {
         $this->domain = $settings['ftpDomain'];
         $this->tokens = $settings['tokens'];
@@ -38,7 +38,7 @@ class UploadController
         if (ftp_pwd($this->connId) == '/') {
             if (!ftp_chdir($this->connId, 'scr/')) {
                 ftp_mkdir($this->connId, 'scr/' . date("Ym"));
-            } else {
+            } else if(!ftp_chdir($this->connId, date("Ym") . '/')) {
                 ftp_mkdir($this->connId, date("Ym") . '/');
             }
         }
@@ -57,14 +57,16 @@ class UploadController
                 fclose($this->localFile);
                 unlink($this->tmpPath);
                 $this->ftpClose();
-                print('http://' .
+                return('http://' .
                     $this->domain . '/scr/' .
                     date("Ym") . '/' .
                     end($this->targetParts));
             } else {
-                print("Ошибка при загрузке файла на сервер");
                 unlink($this->tmpPath);
+                return("Ошибка при загрузке файла на сервер");
             }
+        } else {
+            return 'Ошибка при сохранении на локальном сервере';
         }
     }
 
@@ -84,7 +86,6 @@ class UploadController
             $this->checkFtpDir();
             return true;
         } else {
-            print 'Ошибка при сохранении на локальном сервере';
             return false;
         }
     }
@@ -92,7 +93,7 @@ class UploadController
     private function ftpConnect($login)
     {
         if ($this->tokens[$login['username']] != $login['token']) {
-            throw new ConnectException(
+            throw new Exception(
                 "Неверный токен или пользователь",
                 0
             );
@@ -100,7 +101,7 @@ class UploadController
 
         $connId = ftp_ssl_connect($this->server,$this->port,$this->timeout);
         if ($connId == false) {
-            throw new ConnectException(
+            throw new Exception(
                 'Не удалось установить соединение с ' .
                 $this->server,
                 1
@@ -108,7 +109,7 @@ class UploadController
         }
 
         if (!ftp_login($connId, $this->user, $this->pass)) {
-            throw new ConnectException(
+            throw new Exception(
                 'Неверное имя пользователя ftp: ' .
                 $this->user,
                 2

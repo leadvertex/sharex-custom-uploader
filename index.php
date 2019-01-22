@@ -1,5 +1,7 @@
 <?php
 
+error_reporting(0);
+
 class Autoloader
 {
     public static function register()
@@ -19,13 +21,12 @@ class Autoloader
 
 Autoloader::register();
 
-$settings = include "config.php";
+$settings = require_once "config.php";
 
 if(!empty($_POST)) {
     try {
-        error_reporting(E_ALL ^ E_WARNING);
         $uploadController = new UploadController($settings);
-        $uploadController->upload($_FILES['ShareX'], $_POST);
+        print($uploadController->upload($_FILES['ShareX'], $_POST));
     } catch (Exception $e) {
         print($e);
     }
