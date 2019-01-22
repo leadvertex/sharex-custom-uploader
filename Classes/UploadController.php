@@ -38,7 +38,7 @@ class UploadController
         if (ftp_pwd($this->connId) == '/') {
             if (!ftp_chdir($this->connId, 'scr/')) {
                 ftp_mkdir($this->connId, 'scr/' . date("Ym"));
-            } else if(!ftp_chdir($this->connId, date("Ym") . '/')) {
+            } else {
                 ftp_mkdir($this->connId, date("Ym") . '/');
             }
         }
