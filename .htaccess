@@ -1,6 +1,8 @@
-DirectorySlash Off
-
 RewriteEngine On
 
 RewriteCond %{REQUEST_URI} !/index.php
 RewriteRule (.*) /index.php?route=$1 [L,QSA]
+
+php_value memory_limit 30M
+php_value post_max_size 100M
+php_value upload_max_filesize 30M

@@ -1,0 +1,10 @@
+﻿{
+  "Name": "CustomService",
+  "DestinationType": "ImageUploader, TextUploader, FileUploader",
+  "RequestURL": "http://upload.example.com",
+  "FileFormName": "ShareX",
+  "Arguments": {
+    "token": "token",
+    "username": "username1"
+  }
+}

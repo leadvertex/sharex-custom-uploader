@@ -2,8 +2,7 @@
 class UploadController
 {
     private $connId;
-    private $fType;
-    private $targetParts;
+    private $newNameParts;
     private $localFile;
     private $tmpPath;
     private $domain;
@@ -12,34 +11,39 @@ class UploadController
     private $server;
     private $port;
     private $timeout;
+    private $tokens;
+    private $ftpUseSsl;
+    private $ftpBaseDir;
 
-    public function __construct($settings)
+    public function __construct(
+        $ftpDomain, $tokens, $ftpUser,
+        $ftpPass, $ftpServer, $ftpTimeout = 90, $ftpPort = 21,
+        $ftpUseSsl, $ftpBaseDir
+    )
     {
-        $this->domain = $settings['ftpDomain'];
-        $this->tokens = $settings['tokens'];
-        $this->user = $settings['ftpUser'];
-        $this->pass = $settings['ftpPass'];
-        $this->server = $settings['ftpServer'];
-        $this->timeout = $settings['ftpTimeout'];
-        $this->port = $this->checkPort($settings['ftpPort']);
-    }
-
-    private function isImage($fType)
-    {
-        if ($fType == 'image') {
-            return FTP_IMAGE;
-        } else {
-            return FTP_AUTOSEEK;
-        }
+        $this->domain = $ftpDomain;
+        $this->tokens = $tokens;
+        $this->user = $ftpUser;
+        $this->pass = $ftpPass;
+        $this->server = $ftpServer;
+        $this->timeout = $ftpTimeout;
+        $this->port = $ftpPort;
+        $this->ftpUseSsl = $ftpUseSsl;
+        $this->ftpBaseDir = $ftpBaseDir;
     }
 
     private function checkFtpDir()
     {
-        if (ftp_pwd($this->connId) == '/') {
-            if (!ftp_chdir($this->connId, 'scr/')) {
-                ftp_mkdir($this->connId, 'scr/' . date("Ym"));
+        if (ftp_pwd($this->connId) == DIRECTORY_SEPARATOR) {
+            if (!ftp_chdir($this->connId, $this->ftpBaseDir)) {
+                ftp_mkdir($this->connId, $this->ftpBaseDir .
+                    date("Ym")
+                );
             } else {
-                ftp_mkdir($this->connId, date("Ym") . '/');
+                ftp_mkdir(
+                    $this->connId, date("Ym") .
+                    DIRECTORY_SEPARATOR
+                );
             }
         }
     }
@@ -47,46 +51,38 @@ class UploadController
     public function upload($files,$login)
     {
         $this->ftpConnect($login);
-        if ($this->tmpLocalSave($files)) {
-            if (ftp_fput(
-                $this->connId,
-                date("Ym") . '/' . end($this->targetParts),
-                $this->localFile,
-                $this->isImage($this->fType)
-            )) {
-                fclose($this->localFile);
-                unlink($this->tmpPath);
-                $this->ftpClose();
-                return('http://' .
-                    $this->domain . '/scr/' .
-                    date("Ym") . '/' .
-                    end($this->targetParts));
-            } else {
-                unlink($this->tmpPath);
-                return("Ошибка при загрузке файла на сервер");
-            }
+        $this->tmpLocalSave($files);
+        $this->checkFtpDir();
+        if (ftp_fput(
+            $this->connId,
+            date("Ym") . DIRECTORY_SEPARATOR .
+            end($this->newNameParts), $this->localFile, FTP_BINARY
+        )) {
+            fclose($this->localFile);
+            unlink($this->tmpPath);
+            return($this->domain . DIRECTORY_SEPARATOR. $this->ftpBaseDir .
+                date("Ym") . DIRECTORY_SEPARATOR .
+                end($this->newNameParts));
         } else {
-            return 'Ошибка при сохранении на локальном сервере';
+            unlink($this->tmpPath);
+            throw new Exception("Ошибка при загрузке файла на сервер");
         }
     }
 
     private function tmpLocalSave($files)
     {
-        $nameParts = explode(".", $files["name"]);
-        $target = substr(hash("ripemd160",$files["name"]),0,10) . "." . end($nameParts);
+        $fileNameParts = explode(".", $files["name"]);
+        $fileNewName = substr(hash("ripemd160", $files["name"]),
+                0, 10) . "." . end($fileNameParts);
 
-        if (move_uploaded_file($files['tmp_name'],$target)) {
-            $this->targetParts = explode('/' .
-                date("Ym"), $target);
+        if (move_uploaded_file($files['tmp_name'],$fileNewName)) {
+            $this->newNameParts = explode(DIRECTORY_SEPARATOR .
+                date("Ym"), $fileNewName);
             $this->tmpPath = dirname(__DIR__) .
-                '/' . end($this->targetParts);
-            $this->fType = $nameParts;
+                DIRECTORY_SEPARATOR . $fileNewName;
             $this->localFile = fopen($this->tmpPath, 'r');
-            $this->fType = explode('/', $files['type'])[0];
-            $this->checkFtpDir();
-            return true;
         } else {
-            return false;
+            throw new Exception('Ошибка при сохранении на локальном сервере');
         }
     }
 
@@ -94,25 +90,28 @@ class UploadController
     {
         if ($this->tokens[$login['username']] != $login['token']) {
             throw new Exception(
-                "Неверный токен или пользователь",
-                0
+                "Неверный токен или пользователь"
             );
         }
 
-        $connId = ftp_ssl_connect($this->server,$this->port,$this->timeout);
+        if ($this->ftpUseSsl == true) {
+            $connId = ftp_ssl_connect($this->server, $this->port,
+                $this->timeout);
+        } else {
+            $connId = ftp_connect($this->server, $this->port,
+                $this->timeout);
+        }
+
         if ($connId == false) {
             throw new Exception(
                 'Не удалось установить соединение с ' .
-                $this->server,
-                1
+                $this->server
             );
         }
 
         if (!ftp_login($connId, $this->user, $this->pass)) {
             throw new Exception(
-                'Неверное имя пользователя ftp: ' .
-                $this->user,
-                2
+                'Неверное имя пользователя ftp'
             );
         } else {
             ftp_pasv($connId,true);
@@ -120,18 +119,11 @@ class UploadController
         $this->connId = $connId;
     }
 
-    private function ftpClose()
+    public function __destruct()
     {
-        ftp_close($this->connId);
+        if (isset($this->connId)) {
+            ftp_close($this->connId);
+        };
     }
 
-    private function checkPort($port)
-    {
-        if(!empty($port)){
-            return $port;
-        } else {
-            return 21;
-        }
-    }
 }
-
