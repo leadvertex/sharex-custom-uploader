@@ -34,16 +34,18 @@ class UploadController
 
     private function checkFtpDir()
     {
-        if (ftp_pwd($this->connId) == DIRECTORY_SEPARATOR) {
+        if (ftp_pwd($this->connId) == "/" || ftp_pwd($this->connId) == "\\") {
             if (!ftp_chdir($this->connId, $this->ftpBaseDir)) {
                 ftp_mkdir($this->connId, $this->ftpBaseDir .
-                    date("Ym")
+                    DIRECTORY_SEPARATOR . date("Ym")
                 );
+                ftp_chdir($this->connId, $this->ftpBaseDir .
+                    DIRECTORY_SEPARATOR . date("Ym"));
             } else {
                 ftp_mkdir(
-                    $this->connId, date("Ym") .
-                    DIRECTORY_SEPARATOR
+                    $this->connId, date("Ym")
                 );
+                ftp_chdir($this->connId, date("Ym"));
             }
         }
     }
@@ -55,17 +57,19 @@ class UploadController
         $this->checkFtpDir();
         if (ftp_fput(
             $this->connId,
-            date("Ym") . DIRECTORY_SEPARATOR .
-            end($this->newNameParts), $this->localFile, FTP_BINARY
+            end($this->newNameParts),
+            $this->localFile,
+            FTP_BINARY
         )) {
             fclose($this->localFile);
             unlink($this->tmpPath);
-            return($this->domain . DIRECTORY_SEPARATOR. $this->ftpBaseDir .
-                date("Ym") . DIRECTORY_SEPARATOR .
+            return($this->domain . "/" . $this->ftpBaseDir .
+                "/" . date("Ym") . "/" .
                 end($this->newNameParts));
         } else {
+            fclose($this->localFile);
             unlink($this->tmpPath);
-            throw new Exception("Ошибка при загрузке файла на сервер");
+            throw new Exception("Ошибка при загрузке файла на сервер.");
         }
     }
 
@@ -97,9 +101,11 @@ class UploadController
         if ($this->ftpUseSsl == true) {
             $connId = ftp_ssl_connect($this->server, $this->port,
                 $this->timeout);
+            ftp_pasv($connId, true);
         } else {
             $connId = ftp_connect($this->server, $this->port,
                 $this->timeout);
+            ftp_pasv($connId, true);
         }
 
         if ($connId == false) {

@@ -12,7 +12,7 @@ return[
 
     "ftpDomain" => "http://domain", // http://domain.com
 
-    "ftpBaseDir" => "scr/",
+    "ftpBaseDir" => "scr",
 
     "ftpUseSsl" => true,
 
